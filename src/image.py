@@ -5,7 +5,8 @@
 import cv2
 import numpy as np
 from sklearn.cluster import KMeans
-
+from PIL import Image
+import math
 
 def make_histogram(cluster):
     """
@@ -47,15 +48,18 @@ def sort_hsvs(hsv_list):
         bars_with_indexes.append((index, hsv_val[0], hsv_val[1], hsv_val[2]))
     bars_with_indexes.sort(key=lambda elem: (elem[1], elem[2], elem[3]))
     return [item[0] for item in bars_with_indexes]
+    
+def rgb_distance (rgb_og, rgb_new):
+    return math.sqrt((rgb_new[0]-rgb_og[0])**2 + (rgb_new[1]-rgb_og[1])**2 + (rgb_new[2]-rgb_og[2])**2)
 
-img = cv2.imread('../ironman.png')
+img = cv2.imread('../aashna.png')
 height, width, _ = np.shape(img)
 
 # reshape the image to be a simple list of RGB pixels
 image = img.reshape((height * width, 3))
 
 # we'll pick the 5 most common colors
-num_clusters = 5
+num_clusters = 10
 clusters = KMeans(n_clusters=num_clusters)
 clusters.fit(image)
 
@@ -68,12 +72,14 @@ combined = sorted(combined, key=lambda x: x[0], reverse=True)
 # finally, we'll output a graphic showing the colors in order
 bars = []
 hsv_values = []
+rgb_values = []
 for index, rows in enumerate(combined):
     bar, rgb, hsv = make_bar(100, 100, rows[1])
     print(f'Bar {index + 1}')
     print(f'  RGB values: {rgb}')
     print(f'  HSV values: {hsv}')
     hsv_values.append(hsv)
+    rgb_values.append(rgb)
     bars.append(bar)
 
 # sort the bars[] list so that we can show the colored boxes sorted
@@ -82,5 +88,21 @@ sorted_bar_indexes = sort_hsvs(hsv_values)
 sorted_bars = [bars[idx] for idx in sorted_bar_indexes]
 
 #cv2.imshow('Sorted by HSV values', np.hstack(sorted_bars))
-cv2.imshow(f'{num_clusters} Most Common Colors', np.hstack(bars))
-cv2.waitKey(0)
+#cv2.imshow(f'{num_clusters} Most Common Colors', np.hstack(bars))
+#cv2.waitKey(10000)
+im = Image.open("../aashna.png")
+
+w, h = im.size
+
+painting = Image.new(mode = "RGB", size = im.size)
+for i in range(w):
+    for j in range(h):
+        index = 0
+        min = rgb_distance(rgb_values[0], im.getpixel((i, j)))
+        for rgb_index in range(len(rgb_values)):
+            if (rgb_distance(rgb_values[rgb_index], im.getpixel((i, j))) < min):
+                min = rgb_distance(rgb_values[rgb_index], im.getpixel((i, j)))
+                index = rgb_index
+        painting.putpixel((i, j), rgb_values[index])
+
+painting.save("../aashna-painting.png")
