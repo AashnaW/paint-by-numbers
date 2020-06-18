@@ -106,3 +106,4 @@ for i in range(w):
         painting.putpixel((i, j), rgb_values[index])
 
 painting.save("../aashna-painting.png")
+# I AM MAKING CHANGES
